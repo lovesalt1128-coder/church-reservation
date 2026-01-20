@@ -258,6 +258,80 @@
             z-index: 1000;
         }
 
+        .password-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .password-modal.active {
+            display: flex;
+        }
+
+        .password-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .password-box h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .password-box input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+
+        .password-box button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .password-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .password-box .cancel-btn {
+            background: #999;
+        }
+
+        .password-box .cancel-btn:hover {
+            background: #777;
+        }
+
+        .password-error {
+            color: #f44336;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+
         .admin-view {
             display: none;
             padding: 30px;
@@ -289,6 +363,109 @@
         .stat-card h3 {
             font-size: 2.5em;
             margin-bottom: 10px;
+        }
+
+        .current-usage-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #f44336;
+        }
+
+        .current-usage-item strong {
+            color: #f44336;
+            font-size: 1.1em;
+        }
+
+        .room-timetable {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .room-timetable-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        .room-timetable-header h4 {
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .room-timetable-content {
+            display: grid;
+            gap: 8px;
+        }
+
+        .timetable-slot {
+            display: grid;
+            grid-template-columns: 80px 1fr auto;
+            gap: 15px;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .timetable-slot.empty {
+            background: #fafafa;
+            border-color: #f0f0f0;
+        }
+
+        .timetable-slot.current {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+
+        .timetable-time {
+            font-weight: 600;
+            color: #667eea;
+            text-align: center;
+        }
+
+        .timetable-info {
+            color: #333;
+        }
+
+        .timetable-info.empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .delete-btn:hover {
+            background: #d32f2f;
+        }
+
+        .collapse-btn {
+            background: #e0e0e0;
+            color: #666;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
         }
 
         .bookings-table {
@@ -336,8 +513,19 @@
     </style>
 </head>
 <body>
-    <div class="admin-toggle" id="adminToggle" onclick="toggleAdminView()">
+    <div class="admin-toggle" id="adminToggle" onclick="showPasswordModal()">
         👤 관리자 모드
+    </div>
+
+    <!-- Password Modal -->
+    <div class="password-modal" id="passwordModal">
+        <div class="password-box">
+            <h3>🔐 관리자 인증</h3>
+            <input type="password" id="passwordInput" placeholder="비밀번호를 입력하세요" onkeypress="if(event.key==='Enter') checkPassword()">
+            <button onclick="checkPassword()">확인</button>
+            <button class="cancel-btn" onclick="hidePasswordModal()">취소</button>
+            <div class="password-error" id="passwordError">비밀번호가 틀렸습니다.</div>
+        </div>
     </div>
 
     <div class="container">
@@ -355,36 +543,48 @@
 
         <!-- Admin View -->
         <div class="admin-view" id="adminView">
-            <h2>📊 관리자 대시보드</h2>
-            <button class="refresh-btn" onclick="loadData()">🔄 새로고침</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h2>📊 관리자 대시보드</h2>
+                <button class="refresh-btn" onclick="loadData()">🔄 새로고침</button>
+            </div>
             
+            <!-- Stats Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h3 id="totalCount">0</h3>
-                    <p>총 예약</p>
+                    <h3 id="nowCount">0</h3>
+                    <p>🔴 지금 사용 중</p>
                 </div>
                 <div class="stat-card">
                     <h3 id="todayCount">0</h3>
-                    <p>오늘 예약</p>
+                    <p>📅 오늘 예약</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="weekCount">0</h3>
+                    <p>📈 이번주</p>
                 </div>
             </div>
 
-            <div class="bookings-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>날짜</th>
-                            <th>시간</th>
-                            <th>장소</th>
-                            <th>예약자</th>
-                            <th>연락처</th>
-                            <th>목적</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminTable">
-                        <tr><td colspan="6" style="text-align:center;">데이터 로딩 중...</td></tr>
-                    </tbody>
-                </table>
+            <!-- Current Usage Section -->
+            <div style="background: #fff3cd; border-radius: 15px; padding: 25px; margin-bottom: 30px; border-left: 5px solid #ffc107;">
+                <h3 style="color: #f57c00; margin-bottom: 20px;">🔴 현재 사용 중인 공간</h3>
+                <div id="currentUsage">
+                    <p style="text-align: center; color: #999;">현재 사용 중인 공간이 없습니다</p>
+                </div>
+            </div>
+
+            <!-- Timetable Section -->
+            <div style="background: white; border-radius: 15px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: #667eea;">📅 장소별 타임테이블</h3>
+                    <input type="date" id="adminDate" style="padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                </div>
+
+                <div class="building-tabs" style="margin-bottom: 20px;">
+                    <button class="building-tab active" onclick="switchAdminBuilding('본관')">🏛️ 교회 본관</button>
+                    <button class="building-tab" onclick="switchAdminBuilding('센터위드')">🏢 센터위드</button>
+                </div>
+
+                <div id="timetableContainer"></div>
             </div>
         </div>
 
@@ -404,10 +604,10 @@
                                 <option value="본관-본당">본당</option>
                                 <option value="본관-자모실">자모실</option>
                                 <option value="본관-교회식당">교회 식당</option>
-                                <option value="본관-2-1교실">2-1교실</option>
-                                <option value="본관-2-2교실">2-2교실</option>
-                                <option value="본관-2-3교실">2-3교실</option>
-                                <option value="본관-2-4교실">2-4교실</option>
+                                <option value="본관-영접실">영접실(2-1교실)</option>
+                                <option value="본관-기도실">기도실(2-2교실)</option>
+                                <option value="본관-교육위원회실">교육위원회실</option>
+                                <option value="본관-2층세미나실">2층 세미나실</option>
                                 <option value="본관-악기연습실">악기연습실</option>
                                 <option value="본관-영아부실">영아부실</option>
                             </optgroup>
@@ -497,16 +697,22 @@
         let currentRoom = '본관-본당';
         let currentDate = new Date().toISOString().split('T')[0];
         let isAdmin = false;
+        let adminBuilding = '본관';
+        let adminDate = new Date().toISOString().split('T')[0];
+        let collapsedRooms = new Set(); // 접힌 방 목록
+
+        // 관리자 비밀번호 설정 (여기를 수정하세요!)
+        const ADMIN_PASSWORD = '1972';
 
         const rooms = {
             '본관': [
                 { id: '본관-본당', name: '본당' },
                 { id: '본관-자모실', name: '자모실' },
                 { id: '본관-교회식당', name: '교회 식당' },
-                { id: '본관-2-1교실', name: '2-1교실' },
-                { id: '본관-2-2교실', name: '2-2교실' },
-                { id: '본관-2-3교실', name: '2-3교실' },
-                { id: '본관-2-4교실', name: '2-4교실' },
+                { id: '본관-영접실', name: '영접실(2-1교실)' },
+                { id: '본관-기도실', name: '기도실(2-2교실)' },
+                { id: '본관-교육위원회실', name: '교육위원회실' },
+                { id: '본관-2층세미나실', name: '2층 세미나실' },
                 { id: '본관-악기연습실', name: '악기연습실' },
                 { id: '본관-영아부실', name: '영아부실' }
             ],
@@ -534,6 +740,16 @@
                 currentDate = e.target.value;
                 renderTimeline();
             });
+
+            // Admin date initialization
+            const adminDateInput = document.getElementById('adminDate');
+            if (adminDateInput) {
+                adminDateInput.value = adminDate;
+                adminDateInput.addEventListener('change', (e) => {
+                    adminDate = e.target.value;
+                    renderAdminTimetable();
+                });
+            }
 
             if (APP_URL) {
                 hideSetup();
@@ -706,6 +922,38 @@
             setTimeout(() => msg.style.display = 'none', 3000);
         }
 
+        function showPasswordModal() {
+            // 이미 관리자 모드면 사용자 모드로 전환
+            if (isAdmin) {
+                toggleAdminView();
+                return;
+            }
+            
+            document.getElementById('passwordModal').classList.add('active');
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('passwordError').style.display = 'none';
+            setTimeout(() => document.getElementById('passwordInput').focus(), 100);
+        }
+
+        function hidePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('active');
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('passwordError').style.display = 'none';
+        }
+
+        function checkPassword() {
+            const input = document.getElementById('passwordInput').value;
+            
+            if (input === ADMIN_PASSWORD) {
+                hidePasswordModal();
+                toggleAdminView();
+            } else {
+                document.getElementById('passwordError').style.display = 'block';
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
         function toggleAdminView() {
             isAdmin = !isAdmin;
             const adminView = document.getElementById('adminView');
@@ -730,35 +978,179 @@
 
         function renderAdmin() {
             const today = new Date().toISOString().split('T')[0];
-            const todayBookings = bookings.filter(b => b.date === today);
+            const now = new Date();
+            const currentTime = `${String(now.getHours()).padStart(2, '0')}:00`;
             
-            document.getElementById('totalCount').textContent = bookings.length;
-            document.getElementById('todayCount').textContent = todayBookings.length;
+            // Calculate current usage
+            const currentUsage = bookings.filter(b => {
+                if (b.date !== today) return false;
+                const bookingHour = parseInt(b.time.split(':')[0]);
+                const currentHour = now.getHours();
+                return bookingHour === currentHour;
+            });
+            
+            // Calculate week range
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - now.getDay());
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            
+            const weekBookings = bookings.filter(b => {
+                const bookingDate = new Date(b.date);
+                return bookingDate >= weekStart && bookingDate <= weekEnd;
+            });
+            
+            // Update stats
+            document.getElementById('nowCount').textContent = currentUsage.length;
+            document.getElementById('todayCount').textContent = bookings.filter(b => b.date === today).length;
+            document.getElementById('weekCount').textContent = weekBookings.length;
+            
+            // Render current usage
+            renderCurrentUsage(currentUsage);
+            
+            // Render timetable
+            renderAdminTimetable();
+        }
 
-            const tbody = document.getElementById('adminTable');
-            if (bookings.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">예약이 없습니다</td></tr>';
+        function renderCurrentUsage(currentUsage) {
+            const container = document.getElementById('currentUsage');
+            
+            if (currentUsage.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">현재 사용 중인 공간이 없습니다</p>';
+                return;
+            }
+            
+            container.innerHTML = currentUsage.map(b => {
+                const roomName = getRoomName(b.room);
+                return `
+                    <div class="current-usage-item">
+                        <div>
+                            <strong>${roomName}</strong>
+                            <span style="color: #666; margin: 0 10px;">│</span>
+                            <span style="color: #666;">${b.time} ~ ${getEndTime(b.time)}</span>
+                            <span style="color: #666; margin: 0 10px;">│</span>
+                            <span>${b.name}</span>
+                        </div>
+                        <button class="delete-btn" onclick="deleteBooking('${b.room}', '${b.date}', '${b.time}')">삭제</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderAdminTimetable() {
+            const container = document.getElementById('timetableContainer');
+            const roomList = rooms[adminBuilding];
+            const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const currentHour = now.getHours();
+            const isToday = adminDate === today;
+            
+            container.innerHTML = roomList.map(room => {
+                const roomBookings = bookings.filter(b => b.room === room.id && b.date === adminDate);
+                const hasBookings = roomBookings.length > 0;
+                const isCollapsed = collapsedRooms.has(room.id);
+                
+                // 예약이 없으면 기본 접힘
+                if (!hasBookings && !collapsedRooms.has(room.id)) {
+                    collapsedRooms.add(room.id);
+                }
+                
+                const slotsHTML = timeSlots.map(time => {
+                    const booking = roomBookings.find(b => b.time === time);
+                    const timeHour = parseInt(time.split(':')[0]);
+                    const isCurrent = isToday && timeHour === currentHour;
+                    
+                    if (booking) {
+                        return `
+                            <div class="timetable-slot ${isCurrent ? 'current' : ''}">
+                                <div class="timetable-time">${time} ${isCurrent ? '🔴' : ''}</div>
+                                <div class="timetable-info">
+                                    <strong>${booking.name}</strong> / ${booking.phone}
+                                    ${booking.purpose ? '<br>📌 ' + booking.purpose : ''}
+                                </div>
+                                <button class="delete-btn" onclick="deleteBooking('${booking.room}', '${booking.date}', '${booking.time}')">삭제</button>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="timetable-slot empty">
+                                <div class="timetable-time">${time}</div>
+                                <div class="timetable-info empty">[비어있음]</div>
+                                <div></div>
+                            </div>
+                        `;
+                    }
+                }).join('');
+                
+                return `
+                    <div class="room-timetable">
+                        <div class="room-timetable-header" onclick="toggleRoomCollapse('${room.id}')">
+                            <h4>📍 ${room.name} ${hasBookings ? '(' + roomBookings.length + '건)' : ''}</h4>
+                            <button class="collapse-btn">${isCollapsed ? '펼치기 ▼' : '접기 ▲'}</button>
+                        </div>
+                        <div class="room-timetable-content" style="display: ${isCollapsed ? 'none' : 'grid'};">
+                            ${slotsHTML}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function switchAdminBuilding(building) {
+            adminBuilding = building;
+            document.querySelectorAll('.building-tab').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.includes(building === '본관' ? '본관' : '센터위드'));
+            });
+            collapsedRooms.clear(); // 건물 전환 시 접힘 상태 초기화
+            renderAdminTimetable();
+        }
+
+        function toggleRoomCollapse(roomId) {
+            if (collapsedRooms.has(roomId)) {
+                collapsedRooms.delete(roomId);
+            } else {
+                collapsedRooms.add(roomId);
+            }
+            renderAdminTimetable();
+        }
+
+        function getEndTime(startTime) {
+            const [hour, minute] = startTime.split(':');
+            const endHour = (parseInt(hour) + 1).toString().padStart(2, '0');
+            return `${endHour}:${minute}`;
+        }
+
+        async function deleteBooking(room, date, time) {
+            if (!confirm('정말 이 예약을 삭제하시겠습니까?')) {
                 return;
             }
 
-            const sorted = [...bookings].sort((a, b) => {
-                if (a.date !== b.date) return a.date.localeCompare(b.date);
-                return a.time.localeCompare(b.time);
-            });
+            try {
+                const params = new URLSearchParams({
+                    action: 'delete',
+                    room: room,
+                    date: date,
+                    time: time
+                });
 
-            tbody.innerHTML = sorted.map(b => {
-                const roomName = getRoomName(b.room);
-                return `
-                    <tr>
-                        <td>${b.date}</td>
-                        <td>${b.time}</td>
-                        <td><strong>${roomName}</strong></td>
-                        <td>${b.name}</td>
-                        <td>${b.phone}</td>
-                        <td>${b.purpose || '-'}</td>
-                    </tr>
-                `;
-            }).join('');
+                const response = await fetch(APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('예약이 삭제되었습니다.');
+                    await loadData();
+                } else {
+                    alert('삭제 실패: ' + result.message);
+                }
+            } catch (error) {
+                console.error('삭제 실패:', error);
+                alert('삭제에 실패했습니다: ' + error.message);
+            }
         }
 
         function getRoomName(roomId) {
